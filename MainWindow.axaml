@@ -1,0 +1,493 @@
+<Window x:Class="CourseAutoLearner.MainWindow"
+        xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="clr-namespace:CourseAutoLearner.ViewModels"
+        Title="苏大学习助手" Height="760" Width="1100"
+        WindowStartupLocation="Manual"
+        CanResize="False"
+        Topmost="{Binding IsTopMost}"
+        Background="{StaticResource SurfaceBrush}"
+        Closing="Window_Closing">
+    <Window.Styles>
+        <Style Selector="ToggleButton.topmost">
+            <Setter Property="Background" Value="#E2E8F0" />
+            <Setter Property="CornerRadius" Value="6" />
+            <Setter Property="Padding" Value="12,8" />
+            <Setter Property="FontSize" Value="12" />
+            <Setter Property="FontWeight" Value="Medium" />
+            <Setter Property="Cursor" Value="Hand" />
+        </Style>
+        <Style Selector="ToggleButton.topmost:checked">
+            <Setter Property="Background" Value="#DBEAFE" />
+        </Style>
+        <Style Selector="Button.action-btn">
+            <Setter Property="Padding" Value="12,6" />
+            <Setter Property="FontSize" Value="13" />
+            <Setter Property="CornerRadius" Value="6" />
+            <Setter Property="Cursor" Value="Hand" />
+        </Style>
+    </Window.Styles>
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="56" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="190" />
+        </Grid.RowDefinitions>
+
+        <Border Grid.Row="0" Background="White"
+                BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,0,0,1">
+            <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="16,0">
+                <StackPanel Width="100" VerticalAlignment="Center" Margin="0,0,16,0">
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="🎓" FontSize="22" VerticalAlignment="Center" Margin="0,0,8,0" />
+                        <TextBlock Text="苏大学习助手" FontSize="15" FontWeight="Bold"
+                                   VerticalAlignment="Center" Foreground="#1E293B" Margin="0,0,20,0" />
+                    </StackPanel>
+                </StackPanel>
+                <Button Content="打开浏览器"
+                        Classes="action-btn"
+                        Background="#E2E8F0" Foreground="#1E293B"
+                        VerticalAlignment="Center"
+                        Command="{Binding OpenBrowserCommand}"
+                        IsEnabled="{Binding !IsBrowserOpen}"
+                        Margin="0,0,6,0" />
+                <Button Content="关闭浏览器"
+                        Classes="action-btn"
+                        Background="#E2E8F0" Foreground="#1E293B"
+                        VerticalAlignment="Center"
+                        Command="{Binding CloseBrowserCommand}"
+                        IsEnabled="{Binding IsBrowserOpen}" Margin="0,0,6,0" />
+                <Button Classes="action-btn"
+                        Background="#E2E8F0" Foreground="#1E293B"
+                        VerticalAlignment="Center"
+                        Command="{Binding FetchCoursesCommand}"
+                        IsEnabled="{Binding !IsFetching}"
+                        Margin="0,0,10,0">
+                    <TextBlock>
+                        <TextBlock.Text>
+                            <MultiBinding Converter="{x:Static vm:FetchingMultiConverter.Instance}">
+                                <Binding Path="IsFetching" />
+                            </MultiBinding>
+                        </TextBlock.Text>
+                    </TextBlock>
+                </Button>
+                <Button Content="⚙ 设置"
+                        Classes="action-btn"
+                        Background="#E2E8F0" Foreground="#1E293B"
+                        VerticalAlignment="Center"
+                        ToolTip.Tip="设置 AI 接口"
+                        Click="Settings_Click"
+                        Margin="0,0,10,0"/>
+                <ToggleButton Classes="topmost" VerticalAlignment="Center" Margin="0,0,6,0"
+                              IsChecked="{Binding IsTopMost}" Content="保持最前" />
+                <ToggleButton Classes="topmost" VerticalAlignment="Center" Margin="0,0,6,0"
+                              IsChecked="{Binding IsPartialMode}" Content="多选" />
+                <ToggleButton Classes="topmost" VerticalAlignment="Center" Margin="0,0,8,0"
+                              IsChecked="{Binding IsMuted}">
+                    <ToggleButton.Content>
+                        <TextBlock>
+                            <TextBlock.Text>
+                                <MultiBinding Converter="{x:Static vm:MuteMultiConverter.Instance}">
+                                    <Binding Path="IsMuted" />
+                                </MultiBinding>
+                            </TextBlock.Text>
+                        </TextBlock>
+                    </ToggleButton.Content>
+                </ToggleButton>
+                <ComboBox SelectedIndex="{Binding LearnMode, Converter={StaticResource LearnModeIndexConverter}}"
+                          Width="130" Margin="0,0,6,0" FontSize="12"
+                          VerticalAlignment="Center">
+                    <ComboBoxItem Content="📚 课件+自测" />
+                    <ComboBoxItem Content="🎬 仅课件" />
+                    <ComboBoxItem Content="📝 仅自测" />
+                </ComboBox>
+                <Button Content="⏹ 停止学习"
+                        Classes="action-btn"
+                        Background="#DC2626" Foreground="White"
+                        VerticalAlignment="Center"
+                        Command="{Binding StopLearningCommand}"
+                        IsEnabled="{Binding IsLearning}" Margin="0,0,10,0" />
+                <Ellipse Width="8" Height="8" VerticalAlignment="Center" Margin="0,0,4,0"
+                         Fill="{Binding IsBrowserOpen, Converter={StaticResource BoolToStatusColorConverter}}" />
+                <TextBlock VerticalAlignment="Center" FontSize="11" Foreground="{StaticResource MutedBrush}"
+                           Margin="0,0,6,0">
+                    <TextBlock.Text>
+                        <MultiBinding Converter="{x:Static vm:BrowserStatusMultiConverter.Instance}">
+                            <Binding Path="IsBrowserOpen" />
+                        </MultiBinding>
+                    </TextBlock.Text>
+                </TextBlock>
+                <Border CornerRadius="10" Padding="8,2" Background="#EFF6FF"
+                        VerticalAlignment="Center"
+                        IsVisible="{Binding IsLearning}"
+                        Margin="0,0,4,0">
+                    <TextBlock Text="⏳ 学习中" FontSize="11" Foreground="{StaticResource PrimaryBrush}"
+                               FontWeight="SemiBold" />
+                </Border>
+                <Border CornerRadius="10" Padding="8,2" Background="#F0FDF4"
+                        VerticalAlignment="Center"
+                        IsVisible="{Binding IsFetching}"
+                        Margin="0,0,4,0">
+                    <TextBlock Text="🔄 读取中" FontSize="11" Foreground="{StaticResource SuccessBrush}"
+                               FontWeight="SemiBold" />
+                </Border>
+            </StackPanel>
+        </Border>
+        <Grid Grid.Row="1">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="300" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+            <Border Grid.Column="0" Background="White"
+                    BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,0,1,0">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                    </Grid.RowDefinitions>
+                    <Border Grid.Row="0" Margin="16,5,16,5" CornerRadius="12" Padding="10,4"
+                            Background="{StaticResource SurfaceBrush}"
+                            BorderBrush="{StaticResource BorderBrush}" BorderThickness="1">
+                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                            <TextBlock Text="👤" FontSize="13" Margin="0,0,6,0" VerticalAlignment="Center" />
+                            <TextBlock FontSize="13" Foreground="#1E293B" VerticalAlignment="Center">
+                                <Run Text="{Binding UserName, Mode=OneWay}" FontWeight="SemiBold" />
+                                <Run Text="  " />
+                                <Run Text="{Binding StudentId, Mode=OneWay}" Foreground="{StaticResource MutedBrush}" />
+                            </TextBlock>
+                            <Button Content="↻"
+                                    Classes="action-btn"
+                                    Background="#E2E8F0" Foreground="#1E293B"
+                                    Padding="5,1" Margin="8,0,0,0" FontSize="13"
+                                    ToolTip.Tip="刷新用户信息"
+                                    Command="{Binding FetchUserInfoCommand}"
+                                    IsEnabled="{Binding IsBrowserOpen}" />
+                        </StackPanel>
+                    </Border>
+                    <Border Grid.Row="1" Padding="8,6" Background="{StaticResource SurfaceBrush}"
+                            BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,0,0,1">
+                        <ComboBox ItemsSource="{Binding AvailableSemesters}" Width="280"
+                                  SelectedItem="{Binding SelectedSemester}"
+                                  FontSize="12" />
+                    </Border>
+                    <TabControl Grid.Row="2">
+                        <TabItem Header="全部">
+                            <Grid>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="*" />
+                                </Grid.RowDefinitions>
+                                <Border Grid.Row="0" Padding="10,6" Background="{StaticResource SurfaceBrush}"
+                                        BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,0,0,1">
+                                    <TextBlock FontSize="12" Foreground="{StaticResource MutedBrush}">
+                                        <Run Text="共 " /><Run Text="{Binding AllCourses.Count, Mode=OneWay}" />
+                                        <Run Text=" 门" />
+                                    </TextBlock>
+                                </Border>
+                                <ListBox Grid.Row="1" ItemsSource="{Binding AllCourses}"
+                                         SelectedItem="{Binding SelectedCourse, Mode=OneWayToSource}">
+                                    <ListBox.ItemTemplate>
+                                        <DataTemplate DataType="{x:Type vm:CourseViewModel}">
+                                            <Grid>
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="*" />
+                                                    <ColumnDefinition Width="Auto" />
+                                                </Grid.ColumnDefinitions>
+                                                <StackPanel Grid.Column="0" VerticalAlignment="Center">
+                                                    <TextBlock Text="{Binding CourseName}" FontWeight="Medium"
+                                                               FontSize="13" TextTrimming="CharacterEllipsis" />
+                                                    <TextBlock FontSize="11" Foreground="{StaticResource MutedBrush}"
+                                                               Margin="0,2,0,0">
+                                                        <Run Text="{Binding CourseId, Mode=OneWay}" />
+                                                        <Run Text="  " />
+                                                        <Run Text="{Binding ProgressText, Mode=OneWay}" />
+                                                    </TextBlock>
+                                                </StackPanel>
+                                                <Border Grid.Column="1" CornerRadius="10" Padding="7,2"
+                                                        Background="{Binding StatusBrush}" VerticalAlignment="Center">
+                                                    <TextBlock Text="{Binding StatusText}" FontSize="11"
+                                                               Foreground="White" FontWeight="Medium" />
+                                                </Border>
+                                            </Grid>
+                                        </DataTemplate>
+                                    </ListBox.ItemTemplate>
+                                </ListBox>
+                            </Grid>
+                        </TabItem>
+                        <TabItem Header="未学习">
+                            <Grid>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="*" />
+                                </Grid.RowDefinitions>
+                                <Border Grid.Row="0" Padding="10,6" Background="{StaticResource SurfaceBrush}"
+                                        BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,0,0,1">
+                                    <TextBlock FontSize="12" Foreground="{StaticResource MutedBrush}">
+                                        <Run Text="共 " /><Run Text="{Binding UnlearnedCourses.Count, Mode=OneWay}" />
+                                        <Run Text=" 门待学习" />
+                                    </TextBlock>
+                                </Border>
+                                <ListBox Grid.Row="1" x:Name="UnlearnedListBox"
+                                         ItemsSource="{Binding UnlearnedCourses}"
+                                         SelectedItem="{Binding SelectedCourse, Mode=OneWayToSource}">
+                                    <ListBox.ItemTemplate>
+                                        <DataTemplate DataType="{x:Type vm:CourseViewModel}">
+                                            <StackPanel Orientation="Horizontal">
+                                                <CheckBox IsChecked="{Binding IsSelected}"
+                                                          VerticalAlignment="Center" Margin="0,0,6,0"
+                                                          IsVisible="{Binding ShowCheckbox}" />
+                                                <StackPanel>
+                                                    <TextBlock Text="{Binding CourseName}" FontWeight="Medium"
+                                                               FontSize="13" TextTrimming="CharacterEllipsis" />
+                                                    <TextBlock FontSize="11" Foreground="{StaticResource MutedBrush}"
+                                                               Margin="0,2,0,0">
+                                                        <Run Text="{Binding CourseId, Mode=OneWay}" />
+                                                        <Run Text="  " />
+                                                        <Run Text="{Binding Semester, Mode=OneWay}" />
+                                                    </TextBlock>
+                                                </StackPanel>
+                                            </StackPanel>
+                                        </DataTemplate>
+                                    </ListBox.ItemTemplate>
+                                </ListBox>
+                            </Grid>
+                        </TabItem>
+                        <TabItem Header="已学习">
+                            <Grid>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="*" />
+                                </Grid.RowDefinitions>
+                                <Border Grid.Row="0" Padding="10,6" Background="{StaticResource SurfaceBrush}"
+                                        BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,0,0,1">
+                                    <TextBlock FontSize="12" Foreground="{StaticResource MutedBrush}">
+                                        <Run Text="共 " /><Run Text="{Binding LearnedCourses.Count, Mode=OneWay}" />
+                                        <Run Text=" 门已完成" />
+                                    </TextBlock>
+                                </Border>
+                                <ListBox Grid.Row="1" ItemsSource="{Binding LearnedCourses}"
+                                         SelectedItem="{Binding SelectedCourse, Mode=OneWayToSource}">
+                                    <ListBox.ItemTemplate>
+                                        <DataTemplate DataType="{x:Type vm:CourseViewModel}">
+                                            <StackPanel>
+                                                <TextBlock Text="{Binding CourseName}" FontWeight="Medium"
+                                                           FontSize="13" TextTrimming="CharacterEllipsis" />
+                                                <TextBlock FontSize="11" Foreground="{StaticResource MutedBrush}"
+                                                           Margin="0,2,0,0">
+                                                    <Run Text="完成: " />
+                                                    <Run Text="{Binding CompletedAtText, Mode=OneWay}" />
+                                                </TextBlock>
+                                            </StackPanel>
+                                        </DataTemplate>
+                                    </ListBox.ItemTemplate>
+                                </ListBox>
+                            </Grid>
+                        </TabItem>
+                    </TabControl>
+                </Grid>
+            </Border>
+            <Grid Grid.Column="1">
+                <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center"
+                            IsVisible="{Binding !SelectedCourse}">
+                    <TextBlock Text="📚" FontSize="52" HorizontalAlignment="Center" Margin="0,0,0,12" />
+                    <TextBlock Text="从左侧选择一门课程查看详情" FontSize="14"
+                               Foreground="{StaticResource MutedBrush}" HorizontalAlignment="Center" />
+                    <TextBlock Text="（请先打开浏览器登录，再点击「读取课程」）" FontSize="12"
+                               Foreground="{StaticResource MutedBrush}" HorizontalAlignment="Center" Margin="0,6,0,0" />
+                </StackPanel>
+
+                <Grid IsVisible="{Binding SelectedCourse}">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                    </Grid.RowDefinitions>
+                    <Border Grid.Row="0" Background="White" Padding="16,12"
+                            BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,0,0,1">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <StackPanel Grid.Column="0">
+                                <TextBlock Text="{Binding SelectedCourse.CourseName}"
+                                           FontSize="17" FontWeight="Bold" Foreground="#1E293B" />
+                                <TextBlock FontSize="12" Foreground="{StaticResource MutedBrush}" Margin="0,4,0,0">
+                                    <Run Text="编号: " /><Run Text="{Binding SelectedCourse.CourseId, Mode=OneWay}" />
+                                    <Run Text="    学期: " />
+                                    <Run Text="{Binding SelectedCourse.Semester, Mode=OneWay}" />
+                                    <Run Text="    类型: " />
+                                    <Run Text="{Binding SelectedCourse.CourseType, Mode=OneWay}" />
+                                    <Run Text="    教学: " />
+                                    <Run Text="{Binding SelectedCourse.TeachType, Mode=OneWay}" />
+                                </TextBlock>
+                                <TextBlock FontSize="12" Foreground="{StaticResource MutedBrush}" Margin="0,2,0,0">
+                                    <Run Text="进度: " />
+                                    <Run Text="{Binding SelectedCourse.ProgressText, Mode=OneWay}" />
+                                    <Run Text="    状态: " />
+                                    <Run Text="{Binding SelectedCourse.StatusText, Mode=OneWay}" />
+                                </TextBlock>
+                            </StackPanel>
+                            <Button Grid.Column="1"
+                                    Classes="action-btn"
+                                    Background="#2563EB" Foreground="White"
+                                    Command="{Binding DataContext.StartLearningForCourseCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                    CommandParameter="{Binding SelectedCourse}"
+                                    IsEnabled="{Binding SelectedCourse.CanLearn}"
+                                    Padding="14,7"
+                                    VerticalAlignment="Center">
+                                <TextBlock Text="{Binding SelectedCourse.ActionText}" FontSize="13"
+                                           FontWeight="SemiBold" />
+                            </Button>
+                        </Grid>
+                    </Border>
+                    <ScrollViewer Grid.Row="1" Padding="16,12" Background="{StaticResource SurfaceBrush}">
+                        <ItemsControl ItemsSource="{Binding SelectedCourse.ChapterLessons}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate DataType="{x:Type vm:ChapterLessonsViewModel}">
+                                    <Border Margin="0,0,0,10" Background="White" CornerRadius="8"
+                                            BorderBrush="{StaticResource BorderBrush}" BorderThickness="1">
+                                        <Expander IsExpanded="True">
+                                            <Expander.Header>
+                                                <StackPanel Orientation="Horizontal" Margin="4,2">
+                                                    <CheckBox IsChecked="{Binding IsSelected}"
+                                                              VerticalAlignment="Center" Margin="0,0,6,0"
+                                                              IsVisible="{Binding ShowCheckbox}" />
+                                                    <TextBlock Text="📁" Margin="0,0,7,0" FontSize="14" VerticalAlignment="Center" />
+                                                    <TextBlock Text="{Binding ChapterName}"
+                                                               FontWeight="SemiBold" FontSize="14" Foreground="#1E293B" VerticalAlignment="Center" />
+                                                </StackPanel>
+                                            </Expander.Header>
+                                            <ItemsControl ItemsSource="{Binding Lessons}" Margin="16,4,8,8">
+                                                <ItemsControl.ItemTemplate>
+                                                    <DataTemplate DataType="{x:Type vm:LessonViewModel}">
+                                                        <Border Margin="0,0,0,6"
+                                                                Background="{StaticResource SurfaceBrush}"
+                                                                CornerRadius="6"
+                                                                BorderBrush="{StaticResource BorderBrush}"
+                                                                BorderThickness="1">
+                                                            <Expander IsExpanded="True">
+                                                                <Expander.Header>
+                                                                    <StackPanel Orientation="Horizontal" Margin="4,0">
+                                                                        <CheckBox IsChecked="{Binding IsSelected}"
+                                                                                VerticalAlignment="Center"
+                                                                                Margin="0,0,6,0"
+                                                                                IsVisible="{Binding ShowCheckbox}" />
+                                                                        <TextBlock Text="📄" Margin="0,0,6,0"
+                                                                                VerticalAlignment="Center"
+                                                                                FontSize="13" />
+                                                                        <TextBlock Text="{Binding LessonName}"
+                                                                                VerticalAlignment="Center"
+                                                                                FontWeight="Medium" FontSize="13"
+                                                                                Foreground="#334155" />
+                                                                    </StackPanel>
+                                                                </Expander.Header>
+                                                                <ItemsControl ItemsSource="{Binding ItemViewModels}"
+                                                                              Margin="12,4,8,8">
+                                                                    <ItemsControl.ItemTemplate>
+                                                                        <DataTemplate
+                                                                            DataType="{x:Type vm:CourseItemViewModel}">
+                                                                            <Border Margin="0,3" Padding="10,8"
+                                                                                    CornerRadius="6"
+                                                                                    Background="White"
+                                                                                    BorderBrush="{StaticResource BorderBrush}"
+                                                                                    BorderThickness="1">
+                                                                                <Grid>
+                                                                                    <Grid.ColumnDefinitions>
+                                                                                        <ColumnDefinition Width="Auto" />
+                                                                                        <ColumnDefinition Width="Auto" />
+                                                                                        <ColumnDefinition Width="*" />
+                                                                                        <ColumnDefinition Width="Auto" />
+                                                                                    </Grid.ColumnDefinitions>
+                                                                                    <CheckBox Grid.Column="0"
+                                                                                        IsChecked="{Binding IsSelected}"
+                                                                                        IsEnabled="{Binding IsSelectable}"
+                                                                                        VerticalAlignment="Center"
+                                                                                        Margin="0,0,8,0"
+                                                                                        IsVisible="{Binding ShowCheckbox}" />
+                                                                                    <TextBlock Grid.Column="1"
+                                                                                        Text="{Binding Type, Converter={StaticResource ItemTypeToIconConverter}}"
+                                                                                        FontSize="16"
+                                                                                        VerticalAlignment="Center"
+                                                                                        Margin="0,0,10,0" />
+                                                                                    <StackPanel Grid.Column="2"
+                                                                                        VerticalAlignment="Center">
+                                                                                        <TextBlock
+                                                                                            Text="{Binding ItemName}"
+                                                                                            FontSize="13"
+                                                                                            Foreground="#1E293B" />
+                                                                                        <StackPanel
+                                                                                            Orientation="Horizontal"
+                                                                                            Margin="0,2,0,0">
+                                                                                            <TextBlock FontSize="11"
+                                                                                                Foreground="{StaticResource MutedBrush}"
+                                                                                                Text="{Binding Type, Converter={StaticResource ItemTypeToTextConverter}}" />
+                                                                                            <TextBlock FontSize="11"
+                                                                                                Foreground="#475569"
+                                                                                                FontWeight="SemiBold"
+                                                                                                Margin="8,0,0,0"
+                                                                                                IsVisible="{Binding Type, Converter={StaticResource QuizToVisibilityConverter}}">
+                                                                                                <TextBlock.Text>
+                                                                                                    <MultiBinding Converter="{x:Static vm:QuizScoreMultiConverter.Instance}">
+                                                                                                        <Binding Path="QuizScore" />
+                                                                                                    </MultiBinding>
+                                                                                                </TextBlock.Text>
+                                                                                            </TextBlock>
+                                                                                        </StackPanel>
+                                                                                    </StackPanel>
+                                                                                    <Border Grid.Column="3"
+                                                                                        CornerRadius="10" Padding="8,3"
+                                                                                        Background="{Binding IsLearned, Converter={StaticResource BoolToStatusColorConverter}}"
+                                                                                        VerticalAlignment="Center">
+                                                                                        <TextBlock FontSize="11"
+                                                                                            Foreground="White"
+                                                                                            FontWeight="Medium"
+                                                                                            Text="{Binding IsLearned, Converter={StaticResource LearnedStatusTextConverter}}" />
+                                                                                    </Border>
+                                                                                </Grid>
+                                                                            </Border>
+                                                                        </DataTemplate>
+                                                                    </ItemsControl.ItemTemplate>
+                                                                </ItemsControl>
+                                                            </Expander>
+                                                        </Border>
+                                                    </DataTemplate>
+                                                </ItemsControl.ItemTemplate>
+                                            </ItemsControl>
+                                        </Expander>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </ScrollViewer>
+                </Grid>
+            </Grid>
+        </Grid>
+        <Border Grid.Row="2" BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,1,0,0">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="32" />
+                    <RowDefinition Height="*" />
+                </Grid.RowDefinitions>
+                <Border Grid.Row="0" Background="White" Padding="12,0"
+                        BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,0,0,1">
+                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                        <TextBlock Text="运行日志" FontWeight="SemiBold" FontSize="13"
+                                   Foreground="#1E293B" VerticalAlignment="Center" />
+                        <Button Content="清空"
+                                Classes="action-btn"
+                                Background="#E2E8F0" Foreground="#1E293B"
+                                Padding="8,2" Margin="10,0,0,0" FontSize="12"
+                                Click="ClearLog_Click" />
+                    </StackPanel>
+                </Border>
+                <ScrollViewer Grid.Row="1" x:Name="LogScrollViewer"
+                              Background="{StaticResource LogBgBrush}" Padding="12,8">
+                    <TextBlock x:Name="LogTextBlock" Text="{Binding LogText}"
+                               Foreground="#CDD6F4" FontFamily="Consolas,Courier New"
+                               FontSize="12" TextWrapping="Wrap" />
+                </ScrollViewer>
+            </Grid>
+        </Border>
+    </Grid>
+</Window>

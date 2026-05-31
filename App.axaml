@@ -1,0 +1,31 @@
+<Application x:Class="CourseAutoLearner.App"
+             xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:conv="clr-namespace:CourseAutoLearner.Converters"
+             RequestedThemeVariant="Light">
+    <Application.Styles>
+        <FluentTheme />
+    </Application.Styles>
+
+    <Application.Resources>
+        <ResourceDictionary>
+            <conv:NullToVisibilityConverter x:Key="NullToVisibilityConverter" />
+            <conv:NotNullToVisibilityConverter x:Key="NotNullToVisibilityConverter" />
+            <conv:InverseBoolConverter x:Key="InverseBoolConverter" />
+            <conv:BoolToStatusColorConverter x:Key="BoolToStatusColorConverter" />
+            <conv:ItemTypeToIconConverter x:Key="ItemTypeToIconConverter" />
+            <conv:FetchingTextConverter x:Key="FetchingTextConverter" />
+            <conv:LearnModeIndexConverter x:Key="LearnModeIndexConverter" />
+            <conv:QuizToVisibilityConverter x:Key="QuizToVisibilityConverter" />
+            <conv:BoolToVisibilityConverter x:Key="BoolToVisibilityConverter" />
+
+            <SolidColorBrush x:Key="PrimaryBrush" Color="#2563EB" />
+            <SolidColorBrush x:Key="SuccessBrush" Color="#16A34A" />
+            <SolidColorBrush x:Key="DangerBrush" Color="#DC2626" />
+            <SolidColorBrush x:Key="SurfaceBrush" Color="#F9F9F9" />
+            <SolidColorBrush x:Key="BorderBrush" Color="#E2E8F0" />
+            <SolidColorBrush x:Key="MutedBrush" Color="#64748B" />
+            <SolidColorBrush x:Key="LogBgBrush" Color="#1E1E2E" />
+        </ResourceDictionary>
+    </Application.Resources>
+</Application>

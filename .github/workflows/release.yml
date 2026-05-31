@@ -1,0 +1,105 @@
+name: Build and Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+      - run: dotnet publish CourseAutoLearner.csproj -c Release -r win-x64 --self-contained -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -o publish/win-x64
+      - run: Compress-Archive -Path publish/win-x64/* -DestinationPath SuDaLearner-win-x64.zip
+        shell: pwsh
+      - uses: actions/upload-artifact@v4
+        with:
+          name: win-x64
+          path: SuDaLearner-win-x64.zip
+
+  build-macos-x64:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+      - run: dotnet publish CourseAutoLearner.csproj -c Release -r osx-x64 --self-contained -o publish/osx-x64
+      - run: |
+          cd publish/osx-x64
+          mkdir -p CourseLearner.app/Contents/MacOS CourseLearner.app/Contents/Resources
+          cp -r * CourseLearner.app/Contents/MacOS/ 2>/dev/null || true
+          rm -rf CourseLearner.app/Contents/MacOS/CourseLearner.app
+          cat > CourseLearner.app/Contents/Info.plist << 'PLIST'
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0">
+          <dict>
+            <key>CFBundleExecutable</key><string>CourseLearner</string>
+            <key>CFBundleIdentifier</key><string>com.courselearner.app</string>
+            <key>CFBundleName</key><string>SuDaLearner</string>
+            <key>CFBundleVersion</key><string>1.0.0</string>
+            <key>CFBundlePackageType</key><string>APPL</string>
+            <key>NSHighResolutionCapable</key><true/>
+          </dict>
+          </plist>
+          PLIST
+          cd .. && hdiutil create -volname "SuDaLearner" -srcfolder osx-x64/CourseLearner.app -ov -format UDZO SuDaLearner-osx-x64.dmg
+      - uses: actions/upload-artifact@v4
+        with:
+          name: osx-x64-dmg
+          path: publish/SuDaLearner-osx-x64.dmg
+
+  build-macos-arm64:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+      - run: dotnet publish CourseAutoLearner.csproj -c Release -r osx-arm64 --self-contained -o publish/osx-arm64
+      - run: |
+          cd publish/osx-arm64
+          mkdir -p CourseLearner.app/Contents/MacOS CourseLearner.app/Contents/Resources
+          cp -r * CourseLearner.app/Contents/MacOS/ 2>/dev/null || true
+          rm -rf CourseLearner.app/Contents/MacOS/CourseLearner.app
+          cat > CourseLearner.app/Contents/Info.plist << 'PLIST'
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0">
+          <dict>
+            <key>CFBundleExecutable</key><string>CourseLearner</string>
+            <key>CFBundleIdentifier</key><string>com.courselearner.app</string>
+            <key>CFBundleName</key><string>SuDaLearner</string>
+            <key>CFBundleVersion</key><string>1.0.0</string>
+            <key>CFBundlePackageType</key><string>APPL</string>
+            <key>NSHighResolutionCapable</key><true/>
+          </dict>
+          </plist>
+          PLIST
+          cd .. && hdiutil create -volname "SuDaLearner" -srcfolder osx-arm64/CourseLearner.app -ov -format UDZO SuDaLearner-osx-arm64.dmg
+      - uses: actions/upload-artifact@v4
+        with:
+          name: osx-arm64-dmg
+          path: publish/SuDaLearner-osx-arm64.dmg
+
+  release:
+    needs: [build-windows, build-macos-x64, build-macos-arm64]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            artifacts/win-x64/SuDaLearner-win-x64.zip
+            artifacts/osx-x64-dmg/SuDaLearner-osx-x64.dmg
+            artifacts/osx-arm64-dmg/SuDaLearner-osx-arm64.dmg
+          generate_release_notes: true

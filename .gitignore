@@ -1,0 +1,33 @@
+## .claude / OpenSpec / planning files
+.claude/
+.agents/
+openspec/
+CLAUDE.md
+AGENTS.md
+
+## .NET build
+bin/
+obj/
+*.user
+*.suo
+*.userprefs
+*.sln.docstates
+
+## VS / Rider
+.vs/
+.idea/
+*.rsuser
+
+## Publish output
+publish/
+
+## Runtime files
+courses.db
+run.log
+ai_requests.log
+appsettings.json
+browser-profile/
+
+## OS files
+.DS_Store
+Thumbs.db
